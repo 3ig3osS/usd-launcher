@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>US Portfolio Desk</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#0e3b4d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Portfolio">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+:root{--bg:#0b2430;--ink:#e5eef0;--mut:#9db6bf;--acc:#7db4cb;--card:#12333f;--line:#24505f}
+@media (prefers-color-scheme:light){:root{--bg:#edf1f1;--ink:#12262e;--mut:#4d6670;--acc:#0e3b4d;--card:#fff;--line:#c9d8dc}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom))}
+main{width:100%;max-width:420px;text-align:center}
+img.logo{width:96px;height:96px;border-radius:22px;box-shadow:0 8px 28px rgba(0,0,0,.28)}
+h1{font-size:22px;margin:16px 0 4px}
+p{margin:6px 0;color:var(--mut)}
+.btn{display:block;width:100%;margin:18px 0 8px;padding:14px 16px;border:0;border-radius:12px;background:var(--acc);color:var(--bg);font:inherit;font-weight:600;text-decoration:none;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500;margin-top:8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:18px;text-align:left;font-size:14px;color:var(--mut)}
+.card b{color:var(--ink)}
+input{width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;margin:8px 0}
+.err{color:#e0735c}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <img class="logo" src="icons/icon-192.png" alt="" width="96" height="96">
+  <h1>US Portfolio Desk</h1>
+  <p id="state">กำลังเปิดแอป…</p>
+
+  <a id="open" class="btn" href="#" hidden>เปิดแอป</a>
+
+  <form id="setup" hidden>
+    <p>ยังไม่ได้ตั้งค่า URL ของแอป วาง URL ที่ลงท้ายด้วย <b>/exec</b> จาก Apps Script</p>
+    <input id="url" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" spellcheck="false" aria-label="URL ของเว็บแอป">
+    <p id="msg" class="err" hidden></p>
+    <button class="btn" type="submit">บันทึกและเปิดแอป</button>
+  </form>
+
+  <div id="how" class="card" hidden>
+    <b>ติดตั้งเป็นไอคอนบนเครื่อง</b><br>
+    iPhone/iPad (Safari): แตะปุ่มแชร์ → “เพิ่มไปยังหน้าจอโฮม”<br>
+    Android (Chrome): เมนู ⋮ → “ติดตั้งแอป” หรือ “เพิ่มไปยังหน้าจอหลัก”<br>
+    คอมพิวเตอร์ (Chrome/Edge): ไอคอนติดตั้งที่ช่องที่อยู่
+  </div>
+  <button id="change" class="btn ghost" type="button" hidden>เปลี่ยน URL ของแอป</button>
+</main>
+<script src="config.js"></script>
+<script>
+(function () {
+  'use strict';
+  var KEY = 'usd_app_url';
+  // เฉพาะ URL ของเว็บแอป Apps Script แบบ /exec เท่านั้น (กันการพาไปเว็บอื่นโดยไม่ตั้งใจ)
+  var OK = /^https:\/\/script\.google\.com\/(a\/macros\/[A-Za-z0-9._-]+\/|macros\/)s\/[A-Za-z0-9_-]+\/exec$/;
+  function $(id) { return document.getElementById(id); }
+  function stored() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
+  function save(u) { try { localStorage.setItem(KEY, u); } catch (e) { /* ใช้ config.js แทน */ } }
+  function appUrl() {
+    var c = (window.USD_CONFIG && window.USD_CONFIG.appUrl || '').trim();
+    if (OK.test(c)) return c;
+    var s = stored().trim();
+    return OK.test(s) ? s : '';
+  }
+  var installed = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  var url = appUrl(), params = new URLSearchParams(location.search);
+
+  // ช่วยให้เบราว์เซอร์ต่อเชื่อมกับ Google ล่วงหน้า ลดเวลารอเล็กน้อย
+  if (url) { var l = document.createElement('link'); l.rel = 'preconnect'; l.href = 'https://script.google.com'; document.head.appendChild(l); }
+
+  function showSetup(msg) {
+    $('state').textContent = 'ตั้งค่าครั้งแรก'; $('setup').hidden = false; $('open').hidden = true; $('how').hidden = true;
+    if (msg) { $('msg').textContent = msg; $('msg').hidden = false; }
+  }
+  $('setup').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = $('url').value.trim();
+    if (!OK.test(v)) { $('msg').textContent = 'URL ไม่ถูกต้อง ต้องขึ้นต้นด้วย https://script.google.com/ และลงท้ายด้วย /exec'; $('msg').hidden = false; return; }
+    save(v); location.replace(v);
+  });
+  $('change').addEventListener('click', function () { $('change').hidden = true; $('open').hidden = true; $('how').hidden = true; $('url').value = url; showSetup(''); });
+
+  if (!url) { showSetup(stored() ? 'URL ที่เก็บไว้ไม่ถูกต้อง กรุณาวางใหม่' : ''); return; }
+  $('open').href = url; $('open').hidden = false; $('change').hidden = false;
+  if (installed || params.get('go') === '1') {
+    // เปิดจากไอคอน: ไปที่แอปทันที (ใช้ replace เพื่อไม่ให้ปุ่มย้อนกลับวนกลับมาหน้านี้)
+    $('state').textContent = 'กำลังเปิดแอป…'; location.replace(url);
+  } else {
+    // เปิดในเบราว์เซอร์ปกติ: ไม่เด้งไปเอง เพราะต้องอยู่หน้านี้เพื่อกดติดตั้งไอคอน
+    $('state').textContent = 'พร้อมใช้งาน'; $('how').hidden = false;
+  }
+  if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () { /* ใช้งานได้ตามปกติแม้ไม่มี */ }); }); }
+})();
+</script>
+</body>
+</html>
