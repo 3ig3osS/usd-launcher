@@ -1,7 +1,7 @@
-/* US Portfolio Desk launcher — service worker v1.19.2
+/* US Portfolio Desk launcher — service worker v1.20.0
    ทำหน้าที่เดียว: ให้หน้าเปิดแอปและไอคอนโหลดได้แม้ออฟไลน์ ตัวแอปจริง (Apps Script) ไม่ผ่านตัวนี้เลย
    เปลี่ยนเลขเวอร์ชันของ CACHE ทุกครั้งที่แก้ไฟล์ในโฟลเดอร์นี้ เพื่อให้เครื่องที่ติดตั้งไว้ดึงไฟล์ใหม่ */
-var CACHE = 'usd-launcher-v1.19.2';
+var CACHE = 'usd-launcher-v1.20.0';
 var SHELL = ['./', './index.html', './config.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png', './icons/favicon-32.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(SHELL); }).then(function () { return self.skipWaiting(); }));
